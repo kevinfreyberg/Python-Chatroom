@@ -1,6 +1,6 @@
 # Python-Chatroom
 
-This is a WIP chatroom written in Python. At a minimum, it functionally works as a chatroom. New features coming soon.
+This is a WIP chatroom written in Python. At a minimum, it functionally works as a chatroom.
 
 Usage:
 This chatroom works across multiple devices on a local network. Just run server.py on one device, find the IP of said device,
