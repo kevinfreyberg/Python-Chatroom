@@ -1,5 +1,7 @@
 import socket
 import threading
+from caesar import caesar_encode, caesar_decode
+
 
 # threads allows us to separate code out so its not waiting for
 # other code to finish before it's able to execute
@@ -23,7 +25,14 @@ def handle_client(conn, addr):
     conn.send("[SERVER] Hello, what is your name?".encode(FORMAT))
     name_length = conn.recv(HEADER).decode(FORMAT)
     name_length = int(name_length)
-    name = conn.recv(name_length).decode(FORMAT)
+    name = conn.recv(name_length).decode(FORMAT) # receive name from client
+    
+    conn.send(f'[SERVER] To encrypt our messages, please enter a value for the Caesar shift.'.encode(FORMAT)) # ask client for caesar shift
+    caesar_shift_length = conn.recv(HEADER).decode(FORMAT) # receive length of caesar shift from client
+    caesar_shift_length = int(caesar_shift_length)
+    caesar_shift = conn.recv(caesar_shift_length).decode(FORMAT) # receive actual caesar shift from client
+    # print(caesar_shift)
+    conn.send(f'[SERVER] Caesar shift of {caesar_shift} has been received!'.encode(FORMAT))
     conn.send(f'[SERVER] Welcome to the chatroom, {name}!\n[SERVER] To disconnect, type "!dc" without the quotation marks.'.encode(FORMAT))
 
     while connected:
@@ -32,16 +41,19 @@ def handle_client(conn, addr):
         if msg_length: # if this message has some content.. (if its not None)
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
-            print(f"[{name}] {msg}")
+            decrypted_msg = caesar_decode(msg, -1 * int(caesar_shift))
+            print(f"[{name}] {decrypted_msg}")
             if msg == DISCONNECT_MESSAGE:
                 current_connections.remove(conn)
                 connected = False
                 break
-
-            for connection in current_connections: # this loop sends the message to all other clients
-                if connection == conn: # avoids replicating the message
-                    continue
+            
+            for connection in current_connections: # this loop sends the ENCRYPTED message to all other clients
+                if connection == conn: # avoids echoing the same message back to the client who sent it
+                    #continue
+                    pass
                 connection.send(f"{name}: {msg}".encode(FORMAT))
+                connection.send(f"\n[DECRYPTED] {name}: {decrypted_msg}".encode(FORMAT))
 
     print(f"[CLOSING CONNECTION] {addr}")
     conn.close() # close the current connection cleanly
